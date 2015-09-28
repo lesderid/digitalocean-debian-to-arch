@@ -88,6 +88,9 @@ host_packages=(
 arch_packages=(
 	grub
 	openssh
+	sudo
+	vim
+	git
 )
 
 gpt1_size_MiB=1
