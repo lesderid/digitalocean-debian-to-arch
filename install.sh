@@ -44,7 +44,7 @@ target_architecture="$(uname -m)"
 target_disklabel="gpt"
 
 # new filesystem type (ext4/btrfs)
-target_filesystem="ext4"
+target_filesystem="btrfs"
 
 # NOT EXPOSED NORMALLY: don't prompt
 continue_without_prompting=0
