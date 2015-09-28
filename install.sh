@@ -412,7 +412,16 @@ stage1_install() {
 
 	log "Preparing bootstrap filesystem ..."
 	echo "Server = ${archlinux_mirror}/\$repo/os/\$arch" > /d2a/work/archroot/etc/pacman.d/mirrorlist
-	echo 'nameserver 8.8.8.8' > /d2a/work/archroot/etc/resolv.conf
+	
+	cat > /d2a/work/archroot/etc/resolv.conf <<-EOF
+		# Google IPv6 nameservers
+		nameserver 2001:4860:4860::8888
+		nameserver 2001:4860:4860::8844
+		
+		# Google IPv4 nameservers
+		nameserver 8.8.8.8
+		nameserver 8.8.4.4
+	EOF
 
 	log "Installing base system ..."
 	chroot /d2a/work/archroot pacman-key --init
