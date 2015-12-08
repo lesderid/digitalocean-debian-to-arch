@@ -1033,7 +1033,7 @@ ExecStart=/usr/sbin/digitalocean-synchronize
 pkgname = digitalocean-synchronize
 pkgver = 2.4-2
 pkgdesc = DigitalOcean Synchronization (passwords, keys, networks)
-url = https://github.com/gh2o/digitalocean-debian-to-arch
+url = https://github.com/lesderid/digitalocean-debian-to-arch
 arch = any
 license = GPL
 !!!!
