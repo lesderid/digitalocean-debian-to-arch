@@ -281,6 +281,8 @@ build_parted_cmdline() {
 }
 
 setup_loop_device() {
+	modprobe loop
+	
 	local offset_MiB=$1
 	local size_MiB=$2
 	losetup --find --show --offset ${offset_MiB}MiB --size ${size_MiB}MiB /d2a/work/image
