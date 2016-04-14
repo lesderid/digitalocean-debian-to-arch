@@ -446,7 +446,7 @@ stage1_install() {
 	rm /d2a/work/archroot/dosync.pkg.tar
 
 	local authkeys
-	if authkeys="$(wget -qO- ${meta_base}public-keys)" && test -z "${authkeys}"; then
+	if authkeys="$(wget -qO- -T5 -t1 ${meta_base}public-keys)" && test -z "${authkeys}"; then
 		log "*** WARNING ***"
 		log "SSH public keys are not configured for this droplet."
 		log "PermitRootLogin will be enabled in sshd_config to permit root logins over SSH."
