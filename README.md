@@ -17,7 +17,16 @@ important data.
 Installation
 ------------
 1. Create a new Debian 8.x droplet (either 32-bit or 64-bit is fine).
-2. In the droplet, run the following as root:
+2. Running the script
+    2.1. The safe way:
+In the droplet, run the following as root:
+```
+wget https://raw.githubusercontent.com/lesderid/digitalocean-debian-to-arch/debian8/install.sh
+less install.sh # Inspect the file to see if it downloaded correctly and doesn't contain malicious code  
+bash install.sh
+```
+    2.2. The unsafe, but faster way:
+    In the droplet, run the following as root:
         `curl -s https://raw.githubusercontent.com/lesderid/digitalocean-debian-to-arch/debian8/install.sh | bash -`
 3. Follow the instructions when prompted.
 4. Sit back and relax! The system will automatically reboot once complete,
