@@ -46,6 +46,9 @@ target_disklabel="gpt"
 # new filesystem type (ext4/btrfs)
 target_filesystem="btrfs"
 
+# running on another VPS service (experimental)
+no_digitalocean=0
+
 # NOT EXPOSED NORMALLY: don't prompt
 continue_without_prompting=0
 
@@ -140,6 +143,12 @@ parse_flags() {
 					;;
 				--i_understand_that_this_droplet_will_be_completely_wiped)
 					continue_without_prompting=1
+					conf_key=option_acknowledged
+					shift
+					break
+					;;
+				--no_digitalocean)
+					no_digitalocean=1
 					conf_key=option_acknowledged
 					shift
 					break
@@ -360,31 +369,34 @@ stage1_install() {
 	log "Formatting image ..."
 	local doroot_loop=$(setup_loop_device ${doroot_offset_MiB} ${doroot_size_MiB})
 	local archroot_loop=$(setup_loop_device ${archroot_offset_MiB} ${archroot_size_MiB})
-	mkfs.ext4 -L DOROOT ${doroot_loop}
+	[[ $no_digitalocean -eq 1 ]] || mkfs.ext4 -L DOROOT ${doroot_loop}
 	mkfs.${target_filesystem} -L ArchRoot ${archroot_loop}
 
 	log "Mounting image ..."
 	mkdir -p /d2a/work/{doroot,archroot}
-	mount ${doroot_loop} /d2a/work/doroot
 	mount ${archroot_loop} /d2a/work/archroot
 
-	log "Setting up DOROOT ..."
-	mkdir -p /d2a/work/doroot/etc/network
-	touch /d2a/work/doroot/etc/network/interfaces
-	cat > /d2a/work/doroot/README <<-EOF
-		DO NOT TOUCH FILES ON THIS PARTITION.
+	if [[ $no_digitalocean -eq 0 ]]; then
+		mount ${doroot_loop} /d2a/work/doroot
 
-		The DOROOT partition is where DigitalOcean writes passwords and other data
-		when a droplet is rebuilt from an image or restored from a snapshot.
-		If certain files are missing, restores/rebuilds will not work and you will
-		end up with an unusable image.
+		log "Setting up DOROOT ..."
+		mkdir -p /d2a/work/doroot/etc/network
+		touch /d2a/work/doroot/etc/network/interfaces
+		cat > /d2a/work/doroot/README <<-EOF
+			DO NOT TOUCH FILES ON THIS PARTITION.
 
-		The digitalocean-synchronize script also watches this partition.
-		If this partition (particularly etc/shadow) is written to, the script will
-		reset the root password to the one provided by DigitalOcean and wipe all
-		SSH host keys for security.
-	EOF
-	chmod 0444 /d2a/work/doroot/README
+			The DOROOT partition is where DigitalOcean writes passwords and other data
+			when a droplet is rebuilt from an image or restored from a snapshot.
+			If certain files are missing, restores/rebuilds will not work and you will
+			end up with an unusable image.
+
+			The digitalocean-synchronize script also watches this partition.
+			If this partition (particularly etc/shadow) is written to, the script will
+			reset the root password to the one provided by DigitalOcean and wipe all
+			SSH host keys for security.
+		EOF
+		chmod 0444 /d2a/work/doroot/README
+	fi
 
 	log "Downloading bootstrap tarball ..."
 	set -- $(wget -qO- ${archlinux_mirror}/iso/latest/sha1sums.txt |
@@ -441,9 +453,12 @@ stage1_install() {
 	chroot /d2a/work/archroot usermod -p "${encrypted_password}" root
 	chroot /d2a/work/archroot systemctl enable systemd-networkd.service
 	chroot /d2a/work/archroot systemctl enable sshd.service
-	package_digitalocean_synchronize /d2a/work/archroot/dosync.pkg.tar
-	${chroot_pacman} -U --noconfirm /dosync.pkg.tar
-	rm /d2a/work/archroot/dosync.pkg.tar
+
+	if [[ $no_digitalocean -eq 0 ]]; then
+		package_digitalocean_synchronize /d2a/work/archroot/dosync.pkg.tar
+		${chroot_pacman} -U --noconfirm /dosync.pkg.tar
+		rm /d2a/work/archroot/dosync.pkg.tar
+	fi
 
 	local authkeys
 	if authkeys="$(wget -qO- -T5 -t1 ${meta_base}public-keys)" && test -z "${authkeys}"; then
@@ -545,7 +560,10 @@ insert_into_allocation_map() {
 stage2_arrange() {
 	local disk_sectors=$(cat /sys/block/vda/size)
 	local root_device=$(awk '$2 == "/" { root = $1 } END { print root }' /proc/mounts)
-	local root_offset_sectors=$(cat /sys/block/vda/${root_device#/dev/}/start)
+	local root_offset_sectors=0
+	if [[ $root_device != "/dev/vda" ]]; then
+		root_offset_sectors=$(cat /sys/block/vda/${root_device#/dev/}/start)
+	fi
 	local srcdst_map=()     # original source to target map
 	local unalloc_map=()    # extents not used by either source or target (for tmpdst_map)
 	local tmpdst_map=()     # extents on temporary redirection (allocated from unalloc_map)

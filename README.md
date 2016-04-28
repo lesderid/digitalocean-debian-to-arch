@@ -54,7 +54,9 @@ This script supports several flags, all of which are optional.
 * `--target_filesystem`  
   The filesystem on which the Arch Linux installation should be installed.
   Defaults to `btrfs`. The alternative is `ext4`.
-  
+* `--no_digitalocean`  
+  Disables the parts of the script specific to DigitalOcean.
+
 How it Works
 ------------
 1. A sparse disk image is created with the same size of the droplet's disk.
