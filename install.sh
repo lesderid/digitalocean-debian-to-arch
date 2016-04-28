@@ -731,6 +731,9 @@ stage3_prepare() {
 	# mount tmpfs
 	mount -t tmpfs mid /d2a/mid
 
+	# make sure busybox is installed
+	apt-get -yqq install busybox
+
 	# add binaries
 	add_binary_to_mid /bin/busybox
 	add_binary_to_mid /bin/bash
